@@ -23,13 +23,16 @@ class ColPaliRetriever:
     def build_index(self, images_dir: str, index_save_dir: str | None = None):
         """Index all PNG/JPG images in images_dir. Saves index alongside images by default."""
         images_dir = str(images_dir)
-        self.model.index(
-            input_path=images_dir,
-            index_name=self.INDEX_NAME,
-            store_collection_with_index=True,
-            overwrite=True,
-        )
-        # Build doc_id → path mapping for later image retrieval
+        image_files = sorted([
+            str(p) for p in Path(images_dir).rglob("*")
+            if p.suffix.lower() in {".png", ".jpg", ".jpeg"}
+        ])
+        if not image_files:
+            raise ValueError(f"No PNG/JPG images found in {images_dir}")
+        print(f"Indexing {len(image_files)} images...")
+        for img_path in image_files:
+            self.model.add_file(file_path=img_path, doc_id=None)
+        self.model.save(self.INDEX_NAME, index_save_dir or images_dir)
         self._build_path_map(images_dir)
         if index_save_dir:
             self._save_path_map(index_save_dir)
