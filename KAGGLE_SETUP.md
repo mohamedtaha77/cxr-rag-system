@@ -27,12 +27,28 @@ Repeat for notebooks 02, 03, 04.
 
 ## Step 3: Run in Order
 
-| Notebook | Time | What it does |
-|----------|------|------------|
-| **01** | ~2.5 hrs | Downloads dataset, generates QA pairs via Groq |
-| **02** | ~2 hrs | Builds ColPali + CLIP indexes |
-| **03** | ~3 hrs | Runs all 3 systems, computes evaluation metrics |
-| **04** | ~1 hr | Visualization + comparison |
+⚠️ **CRITICAL: All outputs saved to `/kaggle/working/` persist on disk**
+
+| Notebook | Time | Outputs | Next notebook loads from |
+|----------|------|---------|------------------------|
+| **01** | ~2.5 hrs | `reports_corpus.csv`, `qa_dataset.jsonl` | Disk |
+| **02** | ~2 hrs | `colpali_index/`, `clip_index/` | Disk |
+| **03** | ~3 hrs | `results.csv` | Disk |
+| **04** | ~1 hr | PNG visualizations | Disk |
+
+### Workflow:
+1. Run **Notebook 01** → outputs saved to `/kaggle/working/`
+2. **Terminate session** (GPU memory freed, but files stay on disk)
+3. Run **Notebook 02** → loads from `/kaggle/working/`, saves new indexes
+4. **Terminate session**
+5. Run **Notebook 03** → loads indexes + corpus from `/kaggle/working/`
+6. **Terminate session**
+7. Run **Notebook 04** → loads results from `/kaggle/working/`
+
+### Why terminate between notebooks:
+- Frees GPU memory for next notebook
+- Prevents GPU contention (one notebook at a time = faster)
+- All data is on disk, safe to terminate
 
 **Total execution: ~8-9 hours** → 20+ hours buffer for reruns.
 
