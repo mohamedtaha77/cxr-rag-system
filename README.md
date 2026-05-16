@@ -200,7 +200,7 @@ Question: {question}
 | Test  | 0    | 0    |
 | **Total** | **200** | **1,515** |
 
-*QA generation was limited to first 200 studies due to Groq API rate limits (28 req/min on free tier). All 200 fell within the 80% train split. Future iterations could extend to val/test splits given API quota.
+*QA generation was limited to first 200 studies due to Groq API rate limits (28 req/min on free tier). All 200 fell within the 80% train split.
 
 ---
 
@@ -238,34 +238,23 @@ The ColPali and CLIP indexes contain all 3,652 corpus images, including those us
 
 The hypothesis that **patch-level late-interaction retrieval provides more clinically relevant context than global embedding retrieval** is supported by the comparison between ColPali and CLIP systems, since both retrievers have the same self-retrieval advantage.
 
-A future iteration would exclude the query image's study from the retrieval candidates to provide unbiased performance estimates.
-
 ### QA Evaluation on Train Split
 
-QA pairs were generated only for the first 200 studies (all in train split). Evaluation was performed on these pairs as a methodology demonstration. With more API quota, evaluation could be extended to held-out test pairs.
+QA pairs were generated only for the first 200 studies (all in train split). Evaluation was performed on these pairs as a methodology demonstration.
 
 ---
 
 ## Running the Demo App
 
-Two app variants are provided:
+The Gradio app runs on Kaggle T4 with a public URL exposed via ngrok. Open `notebooks/05_demo_app.ipynb` on Kaggle and follow its in-notebook setup. A Streamlit version (`app/app.py`) is also included for local use.
 
-### Option 1: Gradio (recommended — used for live demo)
-The Gradio app is designed to run on Kaggle with public URL via ngrok.
-
-**Easiest method**: Open `notebooks/05_demo_app.ipynb` on Kaggle, follow the in-notebook setup. Provides a public ngrok URL while the Kaggle session is alive.
-
-For local use:
 ```bash
+# Local Gradio
 python app/app_gradio.py
-```
 
-### Option 2: Streamlit (local only)
-```bash
+# Local Streamlit
 streamlit run app/app.py
 ```
-
-> **Note**: HuggingFace Spaces deployment with ZeroGPU is Gradio-only and requires HF PRO subscription ($9/mo). The Kaggle + ngrok approach in Notebook 05 provides equivalent functionality for free.
 
 ---
 
