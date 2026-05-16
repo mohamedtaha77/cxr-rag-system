@@ -261,7 +261,6 @@ Required Space Secrets: `HF_TOKEN`, `GROQ_API_KEY`, `INDEX_DIR`, `CORPUS_PATH`
 ```
 cxr-rag-system/
 ├── README.md                       # This file
-├── ERRORS.md                       # Comprehensive log of issues + fixes
 ├── KAGGLE_SETUP.md                 # Kaggle T4 workflow guide
 ├── requirements.txt
 ├── .env.example                    # HF_TOKEN, GROQ_API_KEY template

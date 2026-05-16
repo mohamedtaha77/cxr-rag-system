@@ -167,5 +167,4 @@ Contents:
 - `src/` — modular implementation (retrievers, generator, evaluator)
 - `app/` — Gradio + Streamlit dual-mode UIs
 - `evaluation/` — final metric CSVs + sample predictions
-- `ERRORS.md` — detailed log of 27 issues encountered with fixes
 - `README.md` — full setup + methodology documentation
