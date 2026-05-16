@@ -119,16 +119,15 @@ pip install --upgrade peft transformers
 pip install colpali-engine accelerate bitsandbytes
 pip install open-clip-torch faiss-cpu
 pip install bert-score rouge-score
-pip install groq sentence-transformers streamlit
+pip install groq sentence-transformers
+pip install streamlit gradio   # pick one for local demo
 ```
 
 ---
 
 ## Running the Pipeline (Kaggle T4)
 
-See [`KAGGLE_SETUP.md`](KAGGLE_SETUP.md) for detailed Kaggle workflow.
-
-Run notebooks in order:
+Run notebooks in order. Setup instructions are in each notebook's first markdown cell.
 
 | Notebook | Purpose | Approx. Time |
 |----------|---------|-------------|
@@ -136,6 +135,9 @@ Run notebooks in order:
 | `02_colpali_indexing.ipynb` | Build ColPali + CLIP indexes on corpus | ~3 hrs |
 | `03_pipelines_and_eval.ipynb` | Run all 3 systems, compute metrics | ~2 hrs |
 | `04_comparison.ipynb` | Visualize comparison (no GPU needed) | ~5 min |
+| `05_demo_app.ipynb` | Launch live Gradio demo with ngrok public URL | ~5 min |
+
+**Each notebook is self-documenting** — required Kaggle Inputs and Secrets are listed at the top.
 
 ---
 
@@ -246,13 +248,24 @@ QA pairs were generated only for the first 200 studies (all in train split). Eva
 
 ## Running the Demo App
 
-### Locally
+Two app variants are provided:
+
+### Option 1: Gradio (recommended — used for live demo)
+The Gradio app is designed to run on Kaggle with public URL via ngrok.
+
+**Easiest method**: Open `notebooks/05_demo_app.ipynb` on Kaggle, follow the in-notebook setup. Provides a public ngrok URL while the Kaggle session is alive.
+
+For local use:
+```bash
+python app/app_gradio.py
+```
+
+### Option 2: Streamlit (local only)
 ```bash
 streamlit run app/app.py
 ```
 
-### HuggingFace Spaces (optional deployment)
-Required Space Secrets: `HF_TOKEN`, `GROQ_API_KEY`, `INDEX_DIR`, `CORPUS_PATH`
+> **Note**: HuggingFace Spaces deployment with ZeroGPU is Gradio-only and requires HF PRO subscription ($9/mo). The Kaggle + ngrok approach in Notebook 05 provides equivalent functionality for free.
 
 ---
 
@@ -261,7 +274,7 @@ Required Space Secrets: `HF_TOKEN`, `GROQ_API_KEY`, `INDEX_DIR`, `CORPUS_PATH`
 ```
 cxr-rag-system/
 ├── README.md                       # This file
-├── KAGGLE_SETUP.md                 # Kaggle T4 workflow guide
+├── REPORT.md                       # Short report (architecture, models, results, limitations)
 ├── requirements.txt
 ├── .env.example                    # HF_TOKEN, GROQ_API_KEY template
 │
@@ -278,11 +291,12 @@ cxr-rag-system/
 │   └── evaluation/
 │       └── metrics.py              # BERTScore, ROUGE-L, BLEU-4
 │
-├── notebooks/                       # Kaggle/Colab notebooks (run in order 01 → 04)
+├── notebooks/                      # Kaggle notebooks (run in order 01 → 05)
 │   ├── 01_data_and_qa_dataset.ipynb
 │   ├── 02_colpali_indexing.ipynb
 │   ├── 03_pipelines_and_eval.ipynb
-│   └── 04_comparison.ipynb
+│   ├── 04_comparison.ipynb
+│   └── 05_demo_app.ipynb           # Live Gradio demo via Kaggle + ngrok
 │
 ├── evaluation/                     # Evaluation results
 │   ├── results.csv                 # Comparison metrics table
@@ -290,7 +304,8 @@ cxr-rag-system/
 │   └── qa_results.csv              # QA predictions
 │
 └── app/
-    ├── app.py                      # Streamlit dual-mode UI
+    ├── app.py                      # Streamlit dual-mode UI (local)
+    ├── app_gradio.py               # Gradio dual-mode UI (Kaggle/HF Spaces)
     └── utils.py                    # Cached model loaders
 ```
 
