@@ -36,31 +36,62 @@ A dual-mode medical AI system for chest X-ray analysis combining multimodal retr
 
 ## Architecture
 
+The system supports **two modes** that share the same retrieval and generation components but use different query strategies:
+
 ```
-                    ┌─────────────────────────────────────────┐
-                    │              User Input                  │
-                    │  CXR Image  +  (optional) Question       │
-                    └──────────────┬──────────────────────────┘
+                                  USER INPUT
+                                       │
+              ┌────────────────────────┼────────────────────────┐
+              │                        │                        │
+              ▼                        ▼                        ▼
+   ┌──────────────────┐                                 ┌──────────────────┐
+   │ MODE 1: Report   │                                 │ MODE 2: QA       │
+   │ Generation       │                                 │                  │
+   │                  │                                 │                  │
+   │  CXR Image       │                                 │  CXR Image       │
+   │  (no question)   │                                 │  + Question      │
+   └────────┬─────────┘                                 └────────┬─────────┘
+            │                                                    │
+            │ query: "chest x-ray findings"                      │ query: question text
+            │                                                    │
+            └──────────────────────┬─────────────────────────────┘
                                    │
-                    ┌──────────────▼──────────────┐
-                    │   Retrieval Layer (RAG)      │
-                    │                              │
-                    │  ColPali v1.3 (Primary)      │  ← late-interaction over
-                    │  CLIP ViT-L/14 (Baseline)    │    image patches (ColPali)
-                    │                              │    or global embeddings (CLIP)
-                    │  → Top-k similar CXR images  │
-                    │  → Retrieved impression text │
-                    └──────────────┬──────────────┘
+                  ┌────────────────▼─────────────────┐
+                  │   RETRIEVAL LAYER (RAG)          │
+                  │                                  │
+                  │   ColPali v1.3   ────┐           │
+                  │   (patch-level)      │ pick one  │
+                  │   CLIP ViT-L/14  ────┘           │
+                  │   (global)                       │
+                  │                                  │
+                  │   Output: top-k similar CXRs     │
+                  │           + their impressions    │
+                  └────────────────┬─────────────────┘
                                    │
-                    ┌──────────────▼──────────────┐
-                    │   Generation Layer           │
-                    │   MedGemma 1.5 4B IT         │
-                    │   (4-bit NF4 quantization)   │
-                    │                              │
-                    │  Input: image + context      │
-                    │  Output: report / answer     │
-                    └─────────────────────────────┘
+                  ┌────────────────▼─────────────────┐
+                  │   GENERATION LAYER               │
+                  │   MedGemma 1.5 4B IT (4-bit)     │
+                  │                                  │
+                  │   Input:  CXR image + context    │
+                  │           (+ question for QA)    │
+                  └────────────────┬─────────────────┘
+                                   │
+              ┌────────────────────┼────────────────────┐
+              ▼                                         ▼
+   ┌──────────────────┐                       ┌──────────────────┐
+   │  Structured      │                       │  Grounded        │
+   │  Radiology Report│                       │  Clinical Answer │
+   │  (IMPRESSION +   │                       │  (1-3 sentences  │
+   │   FINDINGS)      │                       │   based on image │
+   │                  │                       │   + retrieved)   │
+   └──────────────────┘                       └──────────────────┘
 ```
+
+**Key insight**: Both modes use the same MedGemma + retriever, but differ in:
+- **Input**: report mode is image-only, QA mode adds a clinical question
+- **Retrieval query**: report mode uses generic findings query, QA mode uses the question itself
+- **Prompt template**: different system prompts for report vs answer
+- **Output**: structured report vs concise grounded answer
 
 ---
 
