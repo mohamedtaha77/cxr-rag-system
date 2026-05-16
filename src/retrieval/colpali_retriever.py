@@ -13,7 +13,7 @@ class ColPaliRetriever:
     """
 
     MODEL_NAME = "vidore/colpali-v1.3"
-    BATCH_SIZE = 4
+    BATCH_SIZE = 1
 
     def __init__(self, device: str = "cuda"):
         from colpali_engine.models import ColPali, ColPaliProcessor
@@ -52,12 +52,18 @@ class ColPaliRetriever:
 
             with torch.no_grad():
                 batch_inputs = self.processor.process_images(batch_images).to(self.device)
+                # Remove 'labels' if present (prevents OOM loss computation)
+                batch_inputs.pop('labels', None)
                 batch_embeddings = self.model(**batch_inputs)
 
             all_embeddings.append(batch_embeddings.cpu())
 
             for img in batch_images:
                 img.close()
+
+            # Periodic cleanup to prevent VRAM fragmentation
+            if i % 100 == 0:
+                torch.cuda.empty_cache()
 
         self.image_embeddings = torch.cat(all_embeddings, dim=0)
         self.image_paths = image_paths
