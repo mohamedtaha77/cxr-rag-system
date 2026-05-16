@@ -31,8 +31,10 @@ class CLIPRetriever:
     def build_index(self, image_paths: list[str], batch_size: int = 64):
         """Encode all images and build a FAISS cosine similarity index."""
         import faiss
+        from tqdm import tqdm
         all_embeddings = []
-        for i in range(0, len(image_paths), batch_size):
+        print(f'Encoding {len(image_paths)} images...')
+        for i in tqdm(range(0, len(image_paths), batch_size)):
             batch_paths = image_paths[i: i + batch_size]
             imgs = []
             valid_paths = []

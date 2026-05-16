@@ -8,8 +8,15 @@ from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import gradio as gr
-import spaces
 import torch
+
+# spaces.GPU decorator only needed on HF Spaces ZeroGPU; no-op on Kaggle/local
+try:
+    import spaces
+    GPU_DECORATOR = spaces.GPU(duration=120)
+except ImportError:
+    def GPU_DECORATOR(fn):
+        return fn
 import pandas as pd
 from PIL import Image
 from huggingface_hub import hf_hub_download
@@ -83,7 +90,7 @@ def get_generator():
 
 
 # ── Inference functions (decorated for ZeroGPU) ───────────────────────────────
-@spaces.GPU(duration=120)
+@GPU_DECORATOR
 def generate_report(image, retriever_choice, use_rag, top_k):
     if image is None:
         return "Please upload a CXR image.", None, None, None
@@ -127,7 +134,7 @@ def generate_report(image, retriever_choice, use_rag, top_k):
     )
 
 
-@spaces.GPU(duration=120)
+@GPU_DECORATOR
 def answer_question(image, question, retriever_choice, top_k):
     if image is None:
         return "Please upload a CXR image.", None, None, None

@@ -190,11 +190,14 @@ class QACreator:
 
     def _rate_limit(self):
         self._request_count += 1
-        if self._request_count >= self.REQUESTS_PER_MINUTE:
-            elapsed = time.time() - self._minute_start
-            if elapsed < 60:
-                time.sleep(60 - elapsed + 1)
-            self._request_count = 0
+        elapsed = time.time() - self._minute_start
+        if self._request_count > 20:
+            target_interval = 60.0 / self.REQUESTS_PER_MINUTE
+            time_per_request = elapsed / self._request_count
+            if time_per_request < target_interval:
+                time.sleep(target_interval - time_per_request)
+        if elapsed > 60:
+            self._request_count = 1
             self._minute_start = time.time()
 
     def _call_groq(self, question: str, impression: str, findings: str) -> str:
@@ -218,8 +221,11 @@ class QACreator:
                 return resp.choices[0].message.content.strip()
             except Exception as e:
                 if attempt == self.MAX_RETRIES - 1:
+                    print(f"Failed after {self.MAX_RETRIES} retries: {str(e)[:80]}")
                     return ""
-                time.sleep(2 ** attempt)
+                backoff = min(10 * (2 ** attempt), 120)
+                print(f"Groq error (attempt {attempt + 1}/{self.MAX_RETRIES}): waiting {backoff}s...")
+                time.sleep(backoff)
         return ""
 
     def generate_for_study(
