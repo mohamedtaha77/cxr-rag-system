@@ -12,6 +12,7 @@ data/processed/*.csv
 data/processed/*.jsonl
 data/indices/
 ERRORS.md
+VIDEO_SCRIPT.md
 *.bin
 *.safetensors
 *.gguf
