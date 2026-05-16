@@ -179,6 +179,70 @@ context = [path_to_impression.get(r['image_path'], '') for r in retrieved]
 
 ---
 
+## Phase 6: QA Evaluation
+
+### 28. BLEU-4 ZeroDivisionError
+**Error:** `ZeroDivisionError: Fraction(0, 0)` in `evaluate_qa` when computing BLEU-4.
+**Cause:** BLEU-4 fails when predictions are shorter than 4 tokens (no 4-grams to score) or when no n-gram overlap exists between predictions and references.
+**Fix:** Bypassed `evaluate_qa()` and computed BERTScore + ROUGE-L directly. Filtered out empty predictions before scoring:
+```python
+valid = [(p, r) for p, r in zip(qa_preds, qa_refs) if p and r]
+```
+
+### 29. QA Dataset Had No Test Split
+**Issue:** All 1,515 generated QA pairs had `split == 'train'`, none in `val` or `test`.
+**Cause:** QA generation was limited to first 200 studies, which all fell within the 80% train split of the 3,955-study corpus (sorted before splitting).
+**Fix:** Used first 30 train-split QA pairs for evaluation, documented limitation in REPORT.md.
+
+---
+
+## Phase 7: Deployment (HF Spaces / Kaggle ngrok)
+
+### 30. HuggingFace Token Lacks Write Permission
+**Error:** `403 Forbidden: You have read access but not the required permissions for this operation` when uploading to HF Dataset.
+**Cause:** Original HF_TOKEN was created with only read permissions (for MedGemma gated access).
+**Fix:** Created new fine-grained token with:
+- ✓ Read access to contents of all repos under your personal namespace
+- ✓ Read access to contents of all public gated repos you can access
+- ✓ Write access to contents/settings of all repos under your personal namespace
+
+### 31. ZeroGPU Requires HF PRO Subscription
+**Error:** "Subscribe to PRO at https://huggingface.co/subscribe/pro to use ZeroGPU" when creating a Space.
+**Cause:** HuggingFace changed ZeroGPU access policy — now requires PRO ($9/month).
+**Fix:** Switched deployment strategy to **Kaggle T4 + ngrok** for free GPU access. Public URL available while Kaggle session alive.
+
+### 32. ZeroGPU Streamlit Incompatibility
+**Issue:** "ZeroGPU is only available with Gradio SDK" warning when selecting Streamlit.
+**Cause:** ZeroGPU's `@spaces.GPU` decorator only works with Gradio function wrappers.
+**Fix:** Created `app/app_gradio.py` as a Gradio alternative to the Streamlit app. Kept Streamlit version for local deployment.
+
+### 33. huggingface_hub KernelInfo Import Error
+**Error:** `ImportError: cannot import name 'KernelInfo' from 'huggingface_hub.hf_api'`.
+**Cause:** Partial/inconsistent install of huggingface_hub on Kaggle — `_snapshot_download.py` tried to import a class missing from `hf_api.py`.
+**Fix:** Forced clean reinstall:
+```bash
+pip install -q --upgrade --force-reinstall huggingface_hub
+```
+Then restart kernel to load the consistent version.
+
+### 34. ngrok Connection Refused (Gradio Died Silently)
+**Error:** `ERR_NGROK_8012: dial tcp [::1]:7860: connect: connection refused`. ngrok tunnel works but no process on port 7860.
+**Cause:** `subprocess.Popen` to launch Gradio captured stdout/stderr silently — when Gradio crashed (due to error #33), the failure was invisible.
+**Fix:** Run Gradio in a **background thread** in the same Python process instead of subprocess. Errors appear in cell output:
+```python
+import threading
+def run_gradio():
+    app_mod.demo.launch(server_port=7860, server_name='0.0.0.0', quiet=True)
+threading.Thread(target=run_gradio, daemon=True).start()
+```
+
+### 35. Evaluation CSVs Ignored by Git
+**Error:** `git status` showed no changes despite `evaluation/results.csv` etc. existing locally.
+**Cause:** `.gitignore` had `evaluation/*.csv` blocking commits.
+**Fix:** Removed that line from `.gitignore` so final evaluation results could be tracked in version control.
+
+---
+
 ## Common Patterns
 
 ### Module Reloading After Pull
